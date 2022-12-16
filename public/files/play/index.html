@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe Online</title>
+  <link rel="stylesheet" href="../styles.css" type="text/css">
+  <link rel="stylesheet" href="game.css" type="text/css">
+</head>
+<body>
+<div id="content-box-aligner">
+  <div id="content-box">
+    <h1>Tic-Tac-Toe Online</h1>
+    <div id="game-content">
+      <div id="player-container">
+        <table>
+          <tr>
+            <th id="player-1">Player 1</th>
+          </tr>
+          <tr>
+            <td>0</td>
+          </tr>
+        </table>
+        <table>
+          <tr>
+            <th id="player-2">Player 2</th>
+          </tr>
+          <tr>
+            <td>0</td>
+          </tr>
+        </table>
+      </div>
+      <div id="game">
+        <div id="game-fields" class="game-item">
+          <div class="field" id="1" onclick="fillField(1)"></div>
+          <div class="field" id="2" onclick="fillField(2)"></div>
+          <div class="field" id="3" onclick="fillField(3)"></div>
+          <div class="field" id="4" onclick="fillField(4)"></div>
+          <div class="field" id="5" onclick="fillField(5)"></div>
+          <div class="field" id="6" onclick="fillField(6)"></div>
+          <div class="field" id="7" onclick="fillField(7)"></div>
+          <div class="field" id="8" onclick="fillField(8)"></div>
+          <div class="field" id="9" onclick="fillField(9)"></div>
+        </div>
+      </div>
+      <a id="status">Status</a>
+    </div>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="play.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+#game {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#player-container {
+    display: flex;
+    justify-content: space-around;
+    margin: 10px;
+}
+
+#status {
+    display: block;
+    margin: 15px;
+    font-size: larger;
+}
+
+#game-fields {
+    display: inline-grid;
+    grid-template-rows: 70px 70px 70px;
+    grid-template-columns: 70px 70px 70px;
+    grid-gap: 3px;
+    padding: 3px;
+    background-color: black;
+    width: auto;
+    border: 10px solid #ff613d;
+}
+
+.field {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    color: black;
+    font-size: x-large;
+    transition: 0.1s;
+    cursor: pointer;
+}

@@ -1,0 +1,8 @@
+{
+  "name": "tic-tac-toe-blj-projekt",
+  "version": "1.0.0",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.5.4"
+  }
+}
