@@ -44,12 +44,12 @@ io.on('connection', (socket) => {
 
         socket.emit('create', {
             status: 'SUCCESS',
-            msg: 'Successfully created game',
+            msg: 'Raum erfolgreich erstellt',
             gameId: gameId,
         });
 
         console.log("Room " + gameName + " (" + gameId + ") added");
-        console.log("Number of games: " + games.length);
+        console.log("Number of rooms: " + games.length);
     });
 
     socket.on('join', (req) => {
@@ -61,7 +61,6 @@ io.on('connection', (socket) => {
             let player = new Player();
             player.name = playerName;
             player.value = 'o';
-            player.turn = false;
             game.players.push(player);
             games[getGameIndex(gameId)] = game;
 
@@ -73,11 +72,11 @@ io.on('connection', (socket) => {
             });
             console.log("Player " + playerName + " joined game " + gameId);
         } else {
-            console.log("Player " + playerName + " tried to join full game " + gameId);
+            console.log("Player " + playerName + " failed to join game " + gameId);
         }
     });
 
-    socket.on('getJoinStatus', (req) => {
+    socket.on('join-status', (req) => {
         let status;
         let msg;
         let game = getGame(req.gameId);
@@ -87,14 +86,14 @@ io.on('connection', (socket) => {
                 status = "SUCCESS";
             } else {
                 status = "FAILED";
-                msg = "Game is full"
+                msg = "Raum ist schon voll";
             }
         } else {
             status = "FAILED";
-            msg = "Game not found";
+            msg = "Diesen Raum gibt es nicht. überprüfe nochmals den Link.";
         }
 
-        socket.emit('joinStatus', {
+        socket.emit('join-status', {
             status: status,
             msg: msg,
             gameId: req.gameId
