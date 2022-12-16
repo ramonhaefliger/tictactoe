@@ -37,7 +37,7 @@ h2 {
 #buttons {
     display: flex;
     flex-direction: column;
-    width: 200px;
+    width: 300px;
     text-align: center;
 }
 
@@ -46,6 +46,7 @@ h2 {
     padding: 12px;
     margin: 5px;
     border-radius: 5px;
+    font-size: large;
 }
 
 #buttons button {
@@ -56,6 +57,8 @@ h2 {
     border-radius: 5px;
     cursor: pointer;
     transition: 0.2s;
+    color: black;
+    font-size: large;
 }
 
 #buttons button:hover {
@@ -66,4 +69,26 @@ h2 {
 #buttons button:active {
     background-color: #ff613d;
     color: black;
+}
+
+@media screen and (max-width: 600px) {
+    body {
+        background-color: #131313;
+    }
+
+    #content-box {
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        width: 100%;
+        height: auto;
+    }
+
+    #content-box-aligner {
+        height: auto;
+    }
+
+    #buttons {
+        width: 80%;
+    }
 }
