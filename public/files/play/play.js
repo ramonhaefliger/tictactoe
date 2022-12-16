@@ -16,7 +16,7 @@ if(type !== 'create') {
 function writeContent() {
     if(type === 'create') {
         content.innerHTML =
-            `<div id="button-aligner">
+           `<div id="button-aligner">
               <div id="buttons">
                 <h3>Spiel erstellen</h3>
                 <label for="game-name-input">Wähle einen Namen für deinen Raum</label>
@@ -26,7 +26,7 @@ function writeContent() {
             </div>`;
     } else if (type !== 'create' && gameId) {
         content.innerHTML =
-            `<div id="button-aligner">
+           `<div id="button-aligner">
               <div id="buttons">
               <h3>Spiel beitreten</h3>
                 <label for="player-name-input">Gib einen Benutzernamen ein, mit dem du Spielen willst.</label>
@@ -55,12 +55,13 @@ function joinGame() {
 }
 
 function checkGame() {
-    socket.emit('join-status', {
+    socket.emit('joinStatus', {
         gameId: gameId,
     })
 }
 
-socket.on('join-status', function(res) {
+socket.on('joinStatusRes', function(res) {
+    alert(JSON.stringify(res));
     if (res.status === 'SUCCESS') {
         writeContent();
     } else {
@@ -87,7 +88,7 @@ function writeToLogs(text) {
 
 function writeGame() {
     document.getElementById('content-box').innerHTML =
-        `<h1>Tic-Tac-Toe Online</h1>
+       `<h1>Tic-Tac-Toe Online</h1>
         <div id="game-content">
           <div class="side-container" id="info-container">
             <div id="info">

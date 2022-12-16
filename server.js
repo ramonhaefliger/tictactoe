@@ -76,7 +76,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('join-status', (req) => {
+    socket.on('joinStatus', (req) => {
         let status;
         let msg;
         let game = getGame(req.gameId);
@@ -90,10 +90,10 @@ io.on('connection', (socket) => {
             }
         } else {
             status = "FAILED";
-            msg = "Diesen Raum gibt es nicht. überprüfe nochmals den Link.";
+            msg = "Diesen Raum gibt es nicht. Überprüfe ob der Link korrekt ist.";
         }
 
-        socket.emit('join-status', {
+        socket.emit('joinStatusRes', {
             status: status,
             msg: msg,
             gameId: req.gameId
