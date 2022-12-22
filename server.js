@@ -24,7 +24,9 @@ class Game {
 class Player {
     name;
     value;
+    socketId;
     turn;
+    points;
 }
 
 let games = [];
@@ -45,7 +47,7 @@ io.on('connection', (socket) => {
         socket.emit('create', {
             status: 'SUCCESS',
             msg: 'Raum erfolgreich erstellt',
-            gameId: gameId,
+            gameId: gameId
         });
 
         console.log("Room " + gameName + " (" + gameId + ") added");
@@ -60,19 +62,40 @@ io.on('connection', (socket) => {
         if (game.players.length < 2) {
             let player = new Player();
             player.name = playerName;
+            player.socketId = socket.id;
             player.value = 'o';
+            player.points = 0;
             game.players.push(player);
             games[getGameIndex(gameId)] = game;
 
             socket.join(gameId);
-            socket.to(gameId).emit('join', {
+            socket.emit('joinRes', {
                 status: 'SUCCESS',
                 playerName: playerName,
                 gameId: game.id
             });
+            io.to(gameId).emit('joins', {
+                playerName: playerName
+            });
             console.log("Player " + playerName + " joined game " + gameId);
         } else {
             console.log("Player " + playerName + " failed to join game " + gameId);
+        }
+    });
+
+    socket.on('disconnect', (req) => {
+        let game = getGameByPlayerSocket(socket.id);
+        let player = getPlayerBySocket(socket.id);
+        if (game) {
+            if (game.players.length === 1) {
+                removeGame(game.id);
+                return;
+            }
+            game.players.splice(getPlayerIndex(player.name), 1);
+            games[getGameIndex(game.id)] = game;
+            io.to(game.id).emit('leave', {
+                playerName: player.name
+            });
         }
     });
 
@@ -86,7 +109,7 @@ io.on('connection', (socket) => {
                 status = "SUCCESS";
             } else {
                 status = "FAILED";
-                msg = "Raum ist schon voll";
+                msg = "Raum ist schon voll.";
             }
         } else {
             status = "FAILED";
@@ -98,7 +121,7 @@ io.on('connection', (socket) => {
             msg: msg,
             gameId: req.gameId
         });
-    })
+    });
 
 });
 
@@ -112,11 +135,54 @@ function getGame(id) {
     return null;
 }
 
+function getGameByPlayerSocket(socketId) {
+    for (let i = 0; i < games.length; i++) {
+        let game = games[i];
+        if (game.players.length > 0) {
+            for (let i = 0; i < game.players.length; i++) {
+                let player = game.players[i];
+                if (player) {
+                    if (player.socketId === socketId) {
+                        return game;
+                    }
+                }
+            }
+        }
+    }
+    return null;
+}
+
+function getPlayerBySocket(socketId) {
+    for (let i = 0; i < games.length; i++) {
+        let game = games[i];
+        if (game.players.length > 0) {
+            if (game.players[0] && game.players[0].socketId === socketId) {
+                return game.players[0];
+            } else if (game.players[1] && game.players[1].socketId === socketId) {
+                return game.players[1];
+            }
+        }
+    }
+    return null;
+}
+
+function getPlayerIndex(playerName) {
+    for (let i = 0; i < games.length; i++) {
+        let game = games[i];
+        if (game.players[0].name === playerName) {
+            return 0;
+        } else if (game.players[1].name === playerName) {
+            return 1;
+        }
+    }
+    return null;
+}
+
 function getGameIndex(id) {
     for (let i = 0; i < games.length; i++) {
         let game = games[i];
         if (game.id === id) {
-            return game.id;
+            return i;
         }
     }
     return null;
@@ -124,6 +190,10 @@ function getGameIndex(id) {
 
 function addGame(game) {
     games.push(game);
+}
+
+function removeGame(id) {
+    games.splice(getGameIndex(id), 1);
 }
 
 function generateId(length) {
@@ -135,8 +205,7 @@ function generateId(length) {
     return id;
 }
 
-
 app.use(express.static('public/files'));
 server.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
+    console.log(`TicTacToe-Server listening on port ${port}`);
 });

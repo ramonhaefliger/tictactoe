@@ -25,6 +25,7 @@ h2 {
     background-color: #131313;
     width: 70%;
     height: 90%;
+    padding: 10px;
 }
 
 #button-aligner {
@@ -70,7 +71,7 @@ h2 {
     color: black;
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 900px) {
     body {
         background-color: #131313;
     }

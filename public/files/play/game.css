@@ -17,8 +17,8 @@
 
 #status {
     display: block;
-    margin: 15px;
     font-size: larger;
+    margin: auto;
 }
 
 #game-fields {
@@ -47,6 +47,7 @@
     display: flex;
     flex-direction: column;
     background-color: #ff613d;
+    text-align: left;
     height: 242px;
     width: 200px;
     margin-left: 10px;
@@ -63,23 +64,77 @@
 
 #logs a {
     display: block;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
-@media screen and (max-width: 600px) {
+#game-stats-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+
+#game-stats {
+    display: flex;
+    flex-direction: column;
+    width: 70%;
+}
+
+#info div {
+    margin: 10px;
+}
+
+#info ul {
+    list-style-type: none;
+    padding: 3px;
+    margin: 3px;
+}
+
+#info li {
+    margin: 3px;
+}
+
+#players {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin: 30px;
+}
+
+.points {
+    font-size: xx-large;
+}
+
+@media screen and (max-width: 900px) {
+
     #game-content {
         flex-direction: column;
         justify-content: center;
         align-items: center;
     }
 
+    #game-stats {
+        width: 70%;
+    }
+
     .side-container {
         height: 100px;
         margin-bottom: 10px;
         margin-top: 10px;
+        width: 242px;
+        padding: 0;
     }
 
     #info-container {
         display: block;
         height: auto;
     }
+
+    #logs-container {
+        display: none;
+    }
+
 }

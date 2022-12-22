@@ -7,10 +7,14 @@ let playerValue;
 let playerName;
 let content = document.getElementById('content-box');
 
-if(type !== 'create') {
-    checkGame();
-} else if (type === 'create') {
-    writeContent();
+if (type !== "test") {
+    if(type !== 'create') {
+        checkGame();
+    } else if (type === 'create') {
+        writeContent();
+    }
+} else {
+    writeGame();
 }
 
 function writeContent() {
@@ -35,7 +39,7 @@ function writeContent() {
               </div>
             </div>`;
     } else {
-        content.innerHTML = `<h3>Diese URL ist ungültig</h3>`;
+        content.innerHTML = `<a>Diese URL ist ungültig</a>`;
     }
 }
 
@@ -61,11 +65,12 @@ function checkGame() {
 }
 
 socket.on('joinStatusRes', function(res) {
-    alert(JSON.stringify(res));
     if (res.status === 'SUCCESS') {
         writeContent();
     } else {
-        content.innerHTML = `<h3>${res.msg}</h3>`;
+        content.innerHTML =
+            `<p style="font-size: xxx-large">:(</p>
+            <a>${res.msg}</a>`;
     }
 });
 
@@ -77,9 +82,19 @@ socket.on('create', function(res) {
     }
 });
 
-socket.on('join', function(res) {
+socket.on('joinRes', function(res) {
+    alert(JSON.stringify(res));
     writeGame();
-    writeToLogs(`Player ${res.playerName} joined the game!`);
+    //writeToLogs(`Player ${res.playerName} joined the game!`);
+});
+
+socket.on('joins', function(res) {
+    writeToLogs(`Spieler ${res.playerName} ist dem Spiel beigetreten!`);
+    document.getElementById('player-list').insertAdjacentHTML('beforeend', `<li>${res.playerName}</li>`)
+});
+
+socket.on('leave', function(res) {
+    writeToLogs(`Spieler ${res.playerName} hat das Spiel verlassen.`);
 });
 
 function writeToLogs(text) {
@@ -92,7 +107,11 @@ function writeGame() {
         <div id="game-content">
           <div class="side-container" id="info-container">
             <div id="info">
-              <a>Spiele-PIN: XXXXXX</a>
+              <div>Spiele-PIN: <a id="game-pin"></a></div>
+              <div>
+                Spieler:
+                <ul id="player-list"></ul> 
+              </div>
             </div>
           </div>
           <div id="game">
@@ -108,9 +127,34 @@ function writeGame() {
               <div class="field" id="9"></div>
             </div>
           </div>
-          <div class="side-container">
-            <div id="log"></div>
+          <div class="side-container" id="logs-container">
+            <div id="logs"></div>
           </div>
         </div>
-        <a id="status">Status</a>`;
+        <div id="game-stats-container">
+            <div id="game-stats">
+              <div>
+                <a id="status">SPIELER 1 IST DRAN</a>
+              </div>
+                <div id="players">
+                  <table id="player-1">
+                    <tr>
+                      <th>Spieler 1</th>
+                    </tr>
+                    <tr>
+                      <td class="points">0</td>
+                    </tr>
+                  </table> 
+                   <table id="player-2">
+                    <tr>
+                      <th>Spieler 2</th>
+                    </tr>
+                    <tr>
+                      <td class="points">0</td>
+                    </tr>
+                  </table>
+              </div>
+            </div>
+        </div>`;
+        document.getElementById('game-pin').innerHTML = gameId;
 }
