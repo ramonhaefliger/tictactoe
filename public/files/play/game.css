@@ -120,7 +120,62 @@
     display: inline-block;
 }
 
+#ping-container {
+     padding-bottom: 10px;
+}
+
+#overlay-text {
+    background-color: rgba(0, 0, 0, 0.63);
+    position: absolute;
+    font-size: 20px;
+    display: flex;
+    height: 242px;
+    width: 242px;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.message {
+    width: 90%;
+    font-size: 20px;
+    color: black;
+    padding: 10px;
+    border-radius: 5px;
+    display: inline-block;
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    z-index: 9999;
+}
+
+#joinMessage {
+    background-color: rgba(97, 255, 61, 0.9);
+}
+
+#leaveMessage {
+    background-color: rgba(252, 68, 51, 0.9);
+}
+
 @media screen and (max-width: 900px) {
+
+    h1 {
+        margin: 5px;
+    }
+
+    h2 {
+        margin: 10px;
+    }
+
+    #players {
+        margin: 10px;
+    }
+
+    #game-stats-container {
+        padding-top: 20px;
+        padding-bottom: 20px;
+    }
 
     #game-content {
         flex-direction: column;
@@ -149,16 +204,8 @@
         display: none;
     }
 
-}
+    .message {
+        width: 90%;
+    }
 
-#overlay-text {
-    background-color: rgba(0, 0, 0, 0.63);
-    position: absolute;
-    font-size: 20px;
-    display: flex;
-    height: 242px;
-    width: 242px;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
 }

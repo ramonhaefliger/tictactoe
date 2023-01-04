@@ -66,45 +66,45 @@ io.on('connection', (socket) => {
     });
 
     socket.on('create', (req) => {
-        let game = new Game();
-        let gameId = generateId(6);
+        let status;
+        let msg;
+        let gameId;
         let gameName = req.gameName;
-        if (gameName.length <= 20 && !includesForbiddenChars(gameName)) {
+
+        if (gameName.length <= 20 && !includesForbiddenChars(gameName) && gameName && gameName.length > 0) {
+            let game = new Game();
+            gameId = generateId(6);
             game.id = gameId;
             game.name = gameName;
-
             addGame(game);
             socket.join(gameId);
-
-            socket.emit('create', {
-                status: 'SUCCESS',
-                msg: 'Raum erfolgreich erstellt',
-                gameId: gameId,
-                gameName: gameName
-            });
-
+            status = 'SUCCESS';
+            msg = 'Raum erfolgreich erstellt'
             console.log("Room " + gameName + " (" + gameId + ") added");
         } else if (gameName.length > 20) {
-            socket.emit('create', {
-                status: 'FAILED',
-                msg: 'Der Raumname ist zu lang (max. 20 Zeichen)',
-                gameId: gameId,
-                gameName: gameName
-            });
+            status = 'FAILED';
+            msg = 'Der Raumname ist zu lang (max. 20 Zeichen)';
         } else if (includesForbiddenChars(gameName)) {
-            socket.emit('create', {
-                status: 'FAILED',
-                msg: 'Der Raumname enthält verbotene Zeichen',
-                gameId: gameId,
-                gameName: gameName
-            });
+            status = 'FAILED';
+            msg = 'Der Raumname enthält verbotene Zeichen';
+        } else if (!gameName || gameName.length === 0) {
+            status = 'FAILED';
+            msg = 'Der Raumname kann nicht leer sein';
         }
+        socket.emit('create', {
+            status: status,
+            msg: msg,
+            gameId: gameId,
+            gameName: gameName
+        });
     });
 
     socket.on('join', (req) => {
         let playerName = req.playerName;
         let gameId = req.gameId;
         let game = getGame(gameId);
+        let status;
+        let msg;
 
         if (playerName.length <= 20 && !includesForbiddenChars(playerName)) {
             if (game.players.length < 2) {
@@ -122,40 +122,29 @@ io.on('connection', (socket) => {
                 games[getGameIndex(gameId)] = game;
 
                 socket.join(gameId);
-                socket.emit('join', {
-                    status: 'SUCCESS',
-                    playerName: playerName,
-                    gameId: game.id,
-                    gameName: game.name,
-                    players: game.players
-                });
-                io.to(gameId).emit('joins', {
-                    playerName: playerName,
-                    playerValue: player.value
-                });
+                status = 'SUCCESS';
+                msg = null;
             }
         } else if (playerName.length > 20) {
-            socket.emit('join', {
-                status: 'FAILED',
-                msg: 'Der Spielername ist zu lang (max. 20 Zeichen)',
-                playerName: playerName,
-                gameId: game.id,
-                gameName: game.name,
-                players: game.players
-            });
+            status = 'FAILED';
+            msg = 'Der Spielername ist zu lang (max. 20 Zeichen)';
+
         } else if (includesForbiddenChars(playerName)) {
-            socket.emit('join', {
-                status: 'FAILED',
-                msg: 'Der Spielername enthält verbotene Zeichen',
-                playerName: playerName,
-                gameId: game.id,
-                gameName: game.name,
-                players: game.players
-            });
+            status = 'FAILED';
+            msg = 'Der Spielername enthält verbotene Zeichen';
+
         }
+        io.to(gameId).emit('join', {
+            status: status,
+            msg: msg,
+            playerName: playerName,
+            gameId: game.id,
+            gameName: game.name,
+            players: game.players
+        });
      });
 
-    socket.on('disconnect', (req) => {
+    socket.on('disconnect', () => {
         userCount--;
         let game = getGameByPlayerSocket(socket.id);
         let player = getPlayerBySocket(socket.id);
@@ -177,7 +166,7 @@ io.on('connection', (socket) => {
         let msg;
         let game = getGame(req.gameId);
 
-        if (game !== null) {
+        if (game) {
             if (game.players.length < 2) {
                 status = "SUCCESS";
             } else {
@@ -205,7 +194,6 @@ function getGame(id) {
             return game;
         }
     }
-    return null;
 }
 
 function getGameByPlayerSocket(socketId) {
@@ -222,7 +210,6 @@ function getGameByPlayerSocket(socketId) {
             }
         }
     }
-    return null;
 }
 
 function getPlayerBySocket(socketId) {
@@ -236,7 +223,6 @@ function getPlayerBySocket(socketId) {
             }
         }
     }
-    return null;
 }
 
 function getPlayerIndex(playerName) {
@@ -248,7 +234,6 @@ function getPlayerIndex(playerName) {
             return 1;
         }
     }
-    return null;
 }
 
 function getGameIndex(id) {
@@ -258,7 +243,6 @@ function getGameIndex(id) {
             return i;
         }
     }
-    return null;
 }
 
 function addGame(game) {
@@ -279,12 +263,13 @@ function generateId(length) {
 }
 
 function includesForbiddenChars(text) {
-    let forbidden = '<>/@$'
-    for (let i = 0; i < text.length; i++) {
-        if (forbidden.includes(text.charAt(i))) {
+    let forbidden = ['<', '>'];
+    for (let i = 0; i < forbidden.length; i++) {
+        if (text.includes(forbidden[i])) {
             return true;
         }
-    } return false;
+    }
+    return false;
 }
 
 app.use(express.static('public/files'));

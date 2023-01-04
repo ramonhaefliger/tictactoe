@@ -26,22 +26,22 @@ if (gameId === 'test') {
 function writeContent() {
     if(type === 'create') {
         content.innerHTML =
-           `<div id="button-aligner">
+            `<div id="button-aligner">
               <div id="buttons">
                 <h3>Spiel erstellen</h3>
                 <label for="game-name-input">Wähle einen Namen für deinen Raum</label>
-                <input id="game-name-input" placeholder="Raumname eingeben">
+                <input id="game-name-input" placeholder="Raumname eingeben" maxlength="20">
                 <a id="create-error-msg" class="error-msg"></a>
                 <button onclick="createGame()">ERSTELLEN</button>
               </div>
             </div>`;
     } else if (type !== 'create' && gameId) {
         content.innerHTML =
-           `<div id="button-aligner">
+            `<div id="button-aligner">
               <div id="buttons">
               <h3>Spiel beitreten</h3>
                 <label for="player-name-input">Gib einen Benutzernamen ein, mit dem du Spielen willst.</label>
-                <input id="player-name-input" placeholder="Benutzernamen eingeben">
+                <input id="player-name-input" placeholder="Benutzernamen eingeben" maxlength="20">
                 <a id="join-error-msg" class="error-msg"></a>
                 <button onclick="joinGame()">BEITRETEN</button>
               </div>
@@ -96,32 +96,42 @@ socket.on('create', function(res) {
 
 socket.on('join', function(res) {
     if (res.status === 'SUCCESS') {
-        gameName = res.gameName;
-        playerName = res.playerName;
         playerCount++;
-        writeGame();
-        writeToLogs(`Spieler ${res.players[0].name} ist dem Spiel beigetreten!`);
-        document.getElementById('player-list').insertAdjacentHTML('beforeend', `<li name="${res.players[0].name}">${res.players[0].name} (${res.players[0].value})</li>`);
+        if (playerCount === 1) {
+            gameName = res.gameName;
+            playerName = res.playerName;
+            writeGame();
+            ping();
+            let logs = document.getElementById('logs');
+            logs.innerHTML = '';
+            for (let i = 0; i < res.players.length; i++) {
+                writeToLogs(`Spieler ${res.players[i].name} ist dem Spiel beigetreten!`);
+            }
+        } else {
+            writeToLogs(`Spieler ${res.players[res.players.length - 1].name} ist dem Spiel beigetreten!`);
+            showJoinMessage(res.players[res.players.length - 1].name);
+        }
+        let playerList = document.getElementById('player-list');
+        playerList.innerHTML = '';
+        for (let i = 0; i < res.players.length; i++) {
+            playerList.insertAdjacentHTML('beforeend', `
+                <li name="${res.players[i].name}">${res.players[i].name} (${res.players[i].value})</li>`
+            );
+            document.getElementById('player-' + (i + 1)).innerHTML = res.players[i].name;
+        }
+        if (res.players.length > 1) {
+            document.getElementById('overlay-text').style.display = 'none';
+        }
     } else {
         document.getElementById('join-error-msg').innerHTML = res.msg + '!';
-    }
-});
-
-socket.on('joins', function(res) {
-    if (document.getElementsByName(res.playerName).length < 1) {
-        writeToLogs(`Spieler ${res.playerName} ist dem Spiel beigetreten!`);
-        document.getElementById('player-list').insertAdjacentHTML('beforeend', `<li name="${res.playerName}">${res.playerName} (${res.playerValue})</li>`);
-        playerCount++;
-    }
-    if (playerCount > 1) {
-        document.getElementById('overlay-text').style.display = 'none';
     }
 });
 
 socket.on('leave', function(res) {
     writeToLogs(`Spieler ${res.playerName} hat das Spiel verlassen.`);
     document.getElementsByName(res.playerName)[0].remove();
-
+    document.getElementById('overlay-text').style.display = 'flex';
+    showLeaveMessage(res.playerName);
 });
 
 function writeToLogs(text) {
@@ -132,11 +142,11 @@ function writeToLogs(text) {
 
 function writeGame() {
     document.getElementById('content-box').innerHTML =
-       `<h1>Tic-Tac-Toe Online</h1>
-        <div>
-        <a>Ping: </a><a id="ping"></a>
-        </div>
+        `<h1>Tic-Tac-Toe Online</h1>
         <h2 id="room-title"></h2>
+        <div id="ping-container">
+            <a>Ping: </a><a id="ping"></a>
+        </div>
         <div id="game-content">
           <div class="side-container" id="info-container">
             <div id="info">
@@ -168,20 +178,20 @@ function writeGame() {
         <div id="game-stats-container">
             <div id="game-stats">
               <div>
-                <a id="status">SPIELER 1 IST DRAN</a>
+                <a id="status">AUF SPIELER WARTEN...</a>
               </div>
-                <div id="players">
-                  <table id="player-1">
+                <div id="players" style="display: none">
+                  <table>
                     <tr>
-                      <th>Spieler 1</th>
+                      <th id="player-1">warten...</th>
                     </tr>
                     <tr>
                       <td class="points">0</td>
                     </tr>
                   </table>
-                   <table id="player-2">
+                   <table>
                     <tr>
-                      <th>Spieler 2</th>
+                      <th id="player-2">warten...</th>
                     </tr>
                     <tr>
                       <td class="points">0</td>
@@ -198,19 +208,21 @@ function writeGame() {
                 </a>
             </button>
         </div>`;
-        document.getElementById('game-pin').innerHTML = gameId;
-        document.getElementById('room-title').innerHTML = gameName + " - #" + gameId;
+    document.getElementById('game-pin').innerHTML = gameId;
+    document.getElementById('room-title').innerHTML = gameName + " - #" + gameId;
 }
 
-setInterval(() => {
-    const start = Date.now();
 
-    socket.emit("ping", () => {
-        const duration = Date.now() - start;
-        document.getElementById('ping').innerHTML = duration;
-    });
-}, 1000);
+function ping() {
+    setInterval(() => {
+        const start = Date.now();
 
+        socket.emit("ping", () => {
+            const duration = Date.now() - start;
+            document.getElementById('ping').innerHTML = duration;
+        });
+    }, 1000);
+}
 
 // GAME
 
@@ -229,6 +241,19 @@ function delay(time) {
     return new Promise(resolve => setTimeout(resolve, time));
 }
 
+function showJoinMessage(name) {
+    document.body.insertAdjacentHTML('beforeend',
+        `<div id="joinMessage" class="message">Player ${name} joined the game! :)</div>`
+    );
+    delay(5000).then(() => document.getElementById('joinMessage').remove());
+}
+
+function showLeaveMessage(name) {
+    document.body.insertAdjacentHTML('beforeend',
+        `<div id="leaveMessage" class="message">Player ${name} left the game! :(</div>`
+    );
+    delay(4000).then(() => document.getElementById('leaveMessage').remove());
+}
 
 socket.on('fill', function(res) {
     document.getElementById(res.field).innerHTML = res.value;
