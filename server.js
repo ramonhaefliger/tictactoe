@@ -263,9 +263,9 @@ function generateId(length) {
 }
 
 function includesForbiddenChars(text) {
-    let forbidden = ['<', '>'];
-    for (let i = 0; i < forbidden.length; i++) {
-        if (text.includes(forbidden[i])) {
+    let forbiddenChars = ['<', '>'];
+    for (let i = 0; i < forbiddenChars.length; i++) {
+        if (text.includes(forbiddenChars[i])) {
             return true;
         }
     }

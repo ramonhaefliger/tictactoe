@@ -245,7 +245,7 @@ function showJoinMessage(name) {
     document.body.insertAdjacentHTML('beforeend',
         `<div id="joinMessage" class="message">Player ${name} joined the game! :)</div>`
     );
-    delay(5000).then(() => document.getElementById('joinMessage').remove());
+    delay(4000).then(() => document.getElementById('joinMessage').remove());
 }
 
 function showLeaveMessage(name) {
