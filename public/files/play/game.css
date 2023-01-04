@@ -38,7 +38,7 @@
     align-items: center;
     background-color: white;
     color: black;
-    font-size: x-large;
+    font-size: xx-large;
     transition: 0.1s;
     cursor: pointer;
 }
@@ -108,6 +108,18 @@
     font-size: xx-large;
 }
 
+#error-icon {
+    font-size: 40px;
+}
+
+.error-msg {
+    color: #f53a12;
+}
+
+#ping {
+    display: inline-block;
+}
+
 @media screen and (max-width: 900px) {
 
     #game-content {
@@ -137,4 +149,16 @@
         display: none;
     }
 
+}
+
+#overlay-text {
+    background-color: rgba(0, 0, 0, 0.63);
+    position: absolute;
+    font-size: 20px;
+    display: flex;
+    height: 242px;
+    width: 242px;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
 }

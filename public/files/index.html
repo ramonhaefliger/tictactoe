@@ -22,8 +22,17 @@
           <button onclick="redirectToJoin()">SPIEL BEITRETEN</button>
         </div>
       </div>
+      <div>
+        <div style="padding: 5px">
+          <a>Online-Spiele:</a> <a id="game-count"></a>
+        </div>
+        <div style="padding: 5px">
+          <a>Benutzer online:</a> <a id="user-count"></a>
+        </div>
+      </div>
     </div>
   </div>
+  <script src="/socket.io/socket.io.js"></script>
   <script src="index.js"></script>
 </body>
 </html>
