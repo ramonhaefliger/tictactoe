@@ -35,23 +35,31 @@ class Game {
         this.state.fields[field] = value;
     }
 
-    hasWinner(player) {
-        let combination = [];
+    isWinner(player) {
         let winner = false;
         let value = player.value;
+        let fields = this.state.fields;
 
-        for (let i = 0; i < this.state.fields.length; i++) {
-            if (this.state.fields[i] === value) {
-                combination.push(i);
-            }
+        if (fields[0] === value && fields[1] === value && fields[2] === value) {
+            winner = true;
+        } else if (fields[3] === value && fields[4] === value && fields[5] === value) {
+            winner = true;
+        } else if (fields[6] === value && fields[7] === value && fields[8] === value) {
+            winner = true;
+        } else if (fields[0] === value && fields[3] === value && fields[6] === value) {
+            winner = true;
+        } else if (fields[1] === value && fields[4] === value && fields[7] === value) {
+            winner = true;
+        } else if (fields[2] === value && fields[5] === value && fields[8] === value) {
+            winner = true;
+        } else if (fields[0] === value && fields[4] === value && fields[8] === value) {
+            winner = true;
+        } else if (fields[2] === value && fields[4] === value && fields[6] === value) {
+            winner = true;
         }
 
-        for (let i = 0; i < winCombinations.length; i++) {
-            console.log(JSON.stringify(winCombinations[i]))
-            if (JSON.stringify(winCombinations[i].sort()) === JSON.stringify(combination.sort())) {
-                winner = true;
-                return true;
-            }
+        if (winner) {
+            return true;
         }
     }
 
@@ -81,7 +89,7 @@ class Player {
 
 let games = [];
 let chars = ['x', 'o'];
-let winCombinations = [[0, 1, 2], [0, 3, 6], [0, 4, 8], [1, 4, 7], [2, 5, 8], [4, 5, 6], [7, 8, 9], [2, 4, 6], [6, 7, 8]];
+// let winCombinations = [[0, 1, 2], [0, 3, 6], [0, 4, 8], [1, 4, 7], [2, 5, 8], [4, 5, 6], [7, 8, 9], [2, 4, 6], [6, 7, 8]];
 let userCount = 0;
 
 io.on('connection', (socket) => {
@@ -100,31 +108,36 @@ io.on('connection', (socket) => {
 
     socket.on('fill', (req) => {
         let game = getGame(req.gameId);
-        let player = getPlayerBySocket(socket.id);
-        let value = '?';
-        if (player) {
-            value = player.value;
-        }
+
         if (game && game.state.fields[req.field] === '') {
+            let player = getPlayerBySocket(socket.id);
+            let value;
+            if (player) {
+                value = player.value;
+            }
             game.fill(value, req.field)
             io.to(game.id).emit('fill', {
                 field: req.field,
                 value: value
             });
-            if (game.isFull() && game.hasWinner(player)) {
-                sendStatus(game.id, {
-                    status: 'Spieler ' + player.name + ' hat das Spiel gewonnen!',
-                    finished: true,
-                    won: true
-                })
-            } else if (game.isFull() && !game.hasWinner(player)) {
+            let status;
+            let finished;
+            let won;
+            if (game.isWinner(player)) {
+                status = 'Spieler ' + player.name + ' hat das Spiel gewonnen!';
+                finished = true;
+                won = true
+            } else if (game.isFull() && !game.isWinner(player)) {
                 game.reset();
-                sendStatus(game.id, {
-                    status: 'Niemand hat das Spiel gewonnen...',
-                    finished: true,
-                    won: false
-                })
+                status = 'Niemand hat das Spiel gewonnen...';
+                finished = true;
+                won = false;
             }
+            sendStatus(game.id, {
+                status: status,
+                finished: finished,
+                won: won
+            })
         }
     });
 
@@ -227,7 +240,7 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('joinStatus', (req) => {
+    socket.on('join-status', (req) => {
         let status;
         let msg;
         let game = getGame(req.gameId);
@@ -244,7 +257,7 @@ io.on('connection', (socket) => {
             msg = "Diesen Raum gibt es nicht. Überprüfe ob der Link korrekt ist.";
         }
 
-        socket.emit('joinStatus', {
+        socket.emit('join-status', {
             status: status,
             msg: msg,
             gameId: req.gameId

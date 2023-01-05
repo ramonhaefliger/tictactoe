@@ -124,16 +124,39 @@
      padding-bottom: 10px;
 }
 
-#overlay-text {
+#overlay {
+    display: flex;
+    flex-direction: column;
     background-color: rgba(0, 0, 0, 0.63);
     position: absolute;
     font-size: 20px;
-    display: flex;
     height: 242px;
     width: 242px;
     justify-content: center;
     align-items: center;
     z-index: 10;
+}
+
+#restart-button {
+    background-color: #5eea3a;
+    border: 2px solid #5eea3a;
+    padding: 5px;
+    margin: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    color: black;
+    font-size: medium;
+}
+
+#restart-button:hover {
+    background-color: black;
+    color: #5eea3a;
+}
+
+#restart-button:active {
+    background-color: #5eea3a;
+    color: black;
 }
 
 .message {

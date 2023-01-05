@@ -69,12 +69,12 @@ function leaveGame() {
 }
 
 function checkGame() {
-    socket.emit('joinStatus', {
+    socket.emit('join-status', {
         gameId: gameId,
     })
 }
 
-socket.on('joinStatus', function(res) {
+socket.on('join-status', function(res) {
     if (res.status === 'SUCCESS') {
         writeContent();
     } else {
@@ -106,7 +106,7 @@ socket.on('join', function(res) {
         }
 
         if (playerCount > 1) {
-            let overlayText = document.getElementById('overlay-text');
+            let overlayText = document.getElementById('overlay');
             overlayText.style.display = 'none';
         }
 
@@ -144,7 +144,7 @@ function initializeGame(res) {
 socket.on('leave', function(res) {
     playerCount--;
     writeToLogs(`Spieler ${res.playerName} hat das Spiel verlassen.`);
-    let overlayText = document.getElementById('overlay-text');
+    let overlayText = document.getElementById('overlay');
     let playerInList = document.getElementsByName(res.playerName);
     playerInList[0].remove();
     overlayText.style.display = 'flex';
@@ -176,7 +176,15 @@ function writeGame() {
             </div>
           </div>
           <div id="game">
-          <a id="overlay-text">Warten auf Spieler...</a>
+          <div id="overlay">
+            <a>Warten auf Spieler...</a>
+            <button id="restart-button" onclick="restart()">
+                <a style="display: flex; align-items: center;">
+                  <i class="material-icons" style="font-size:20px">refresh</i>
+                  &nbsp;Nochmal spielen
+                </a>
+            </button>
+          </div>
             <div id="game-fields" class="game-item">
               <div class="field" id="0" onclick="fillField(0)"></div>
               <div class="field" id="1" onclick="fillField(1)"></div>
@@ -282,12 +290,14 @@ socket.on('fill', function(res) {
 
 socket.on('status', function(res) {
     document.getElementById('status').innerHTML = res.status.toUpperCase();
+    if (res.won) {
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementById('overlay').innerHTML = 'Spiel fertig';
+    }
 });
 
 socket.on('reset', function(res) {
     for (let i = 0; i < 9; i++) {
         document.getElementById(i).innerHTML = '';
     }
-    // document.getElementById('overlay-text').style.display = 'flex';
-    // document.getElementById('overlay-text').innerHTML = 'Spiel fertig';
 });
