@@ -13,11 +13,61 @@ class Game {
     state = {
         status: null,
         message: null,
+        finished: false,
         fields: [
             '', '', '',
             '', '', '',
             '', '', ''
         ]
+    }
+
+    join(player) {
+        this.players.push(player);
+        this.reset();
+    }
+
+    leave(playerIndex) {
+        this.players.splice(playerIndex, 1);
+        this.reset();
+    }
+
+    fill(value, field) {
+        this.state.fields[field] = value;
+    }
+
+    hasWinner(player) {
+        let combination = [];
+        let winner = false;
+        let value = player.value;
+
+        for (let i = 0; i < this.state.fields.length; i++) {
+            if (this.state.fields[i] === value) {
+                combination.push(i);
+            }
+        }
+
+        for (let i = 0; i < winCombinations.length; i++) {
+            if (JSON.stringify(winCombinations[i]) === JSON.stringify(combination)) {
+                winner = true;
+                return true;
+            }
+        }
+    }
+
+    isFull() {
+        let isFull = true;
+        for (let i = 0; i < this.state.fields.length; i++) {
+            if (this.state.fields[i] === '') {
+                isFull = false;
+            }
+        }
+        return isFull;
+    }
+
+    reset() {
+        this.state.fields = ['', '', '', '', '', '', '', '', ''];
+        this.state.finished = true;
+        io.to(this.id).emit('reset', '...');
     }
 }
 
@@ -26,12 +76,12 @@ class Player {
     name;
     value;
     socketId;
-    turn;
     points;
 }
 
 let games = [];
 let chars = ['x', 'o'];
+let winCombinations = [[0, 1, 2], [0, 3, 6], [0, 4, 8], [1, 4, 7], [2, 5, 8], [4, 5, 6], [7, 8, 9], [2, 4, 6], [6, 7, 8]];
 let userCount = 0;
 
 io.on('connection', (socket) => {
@@ -41,7 +91,7 @@ io.on('connection', (socket) => {
         callback();
     });
 
-    socket.on('info', (req) => {
+    socket.on('info', () => {
         io.to(socket.id).emit('info', {
             gameCount: games.length,
             userCount: userCount
@@ -55,13 +105,26 @@ io.on('connection', (socket) => {
         if (player) {
             value = player.value;
         }
-        if (game && game.state.fields[req.field - 1] === '') {
-            game.state.fields[req.field - 1] = value;
-            games[getGameIndex(game.id)] = game;
+        if (game && game.state.fields[req.field] === '') {
+            game.fill(value, req.field)
             io.to(game.id).emit('fill', {
                 field: req.field,
                 value: value
             });
+            if (game.isFull() && game.hasWinner(player)) {
+                sendStatus(game.id, {
+                    status: 'Spieler ' + player.name + ' hat das Spiel gewonnen!',
+                    finished: true,
+                    won: true
+                })
+            } else if (game.isFull() && !game.hasWinner(player)) {
+                game.reset();
+                sendStatus(game.id, {
+                    status: 'Niemand hat das Spiel gewonnen...',
+                    finished: true,
+                    won: false
+                })
+            }
         }
     });
 
@@ -106,7 +169,7 @@ io.on('connection', (socket) => {
         let status;
         let msg;
 
-        if (playerName.length <= 20 && !includesForbiddenChars(playerName)) {
+        if (playerName.length <= 20 || !includesForbiddenChars(playerName)) {
             if (game.players.length < 2) {
                 let player = new Player();
                 player.name = playerName;
@@ -115,11 +178,14 @@ io.on('connection', (socket) => {
                 if (game.players.length === 0) {
                     player.value = chars[0];
                 } else {
-                    player.value = chars[1];
+                    if (game.players[0].value === chars[0]) {
+                        player.value = chars[1];
+                    } else if (game.players[0].value === chars[1]) {
+                        player.value = chars[0];
+                    }
                 }
                 player.points = 0;
-                game.players.push(player);
-                games[getGameIndex(gameId)] = game;
+                game.join(player);
 
                 socket.join(gameId);
                 status = 'SUCCESS';
@@ -132,7 +198,6 @@ io.on('connection', (socket) => {
         } else if (includesForbiddenChars(playerName)) {
             status = 'FAILED';
             msg = 'Der Spielername enthält verbotene Zeichen';
-
         }
         io.to(gameId).emit('join', {
             status: status,
@@ -153,8 +218,9 @@ io.on('connection', (socket) => {
                 removeGame(game.id);
                 return;
             }
-            game.players.splice(getPlayerIndex(player.name), 1);
-            games[getGameIndex(game.id)] = game;
+            let index = getPlayerIndex(player.name);
+            game.leave(index);
+
             io.to(game.id).emit('leave', {
                 playerName: player.name
             });
@@ -186,6 +252,10 @@ io.on('connection', (socket) => {
     });
 
 });
+
+function sendStatus(socket, status) {
+    io.to(socket).emit('status', status);
+}
 
 function getGame(id) {
     for (let i = 0; i < games.length; i++) {
