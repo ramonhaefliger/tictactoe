@@ -264,14 +264,14 @@ function delay(time) {
 
 function showJoinMessage(name) {
     document.body.insertAdjacentHTML('beforeend',
-        `<div id="joinMessage" class="message">Player ${name} joined the game! :)</div>`
+        `<div id="joinMessage" class="message">Spieler ${name} ist dem Spiel beigetreten! :)</div>`
     );
     delay(4000).then(() => document.getElementById('joinMessage').remove());
 }
 
 function showLeaveMessage(name) {
     document.body.insertAdjacentHTML('beforeend',
-        `<div id="leaveMessage" class="message">Player ${name} left the game! :(</div>`
+        `<div id="leaveMessage" class="message">Spieler ${name} hat das Spiel verlassen! :(</div>`
     );
     delay(4000).then(() => document.getElementById('leaveMessage').remove());
 }

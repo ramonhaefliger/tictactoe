@@ -47,7 +47,8 @@ class Game {
         }
 
         for (let i = 0; i < winCombinations.length; i++) {
-            if (JSON.stringify(winCombinations[i]) === JSON.stringify(combination)) {
+            console.log(JSON.stringify(winCombinations[i]))
+            if (JSON.stringify(winCombinations[i].sort()) === JSON.stringify(combination.sort())) {
                 winner = true;
                 return true;
             }
@@ -66,7 +67,6 @@ class Game {
 
     reset() {
         this.state.fields = ['', '', '', '', '', '', '', '', ''];
-        this.state.finished = true;
         io.to(this.id).emit('reset', '...');
     }
 }
