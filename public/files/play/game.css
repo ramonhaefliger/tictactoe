@@ -80,7 +80,7 @@
 #game-stats {
     display: flex;
     flex-direction: column;
-    width: 70%;
+    width: 100%;
 }
 
 #info div {
@@ -100,7 +100,7 @@
 #players {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: space-evenly;
     margin: 30px;
 }
 
@@ -109,7 +109,8 @@
 }
 
 #error-icon {
-    font-size: 40px;
+    font-size: 50px;
+    margin: 20px;
 }
 
 .error-msg {
@@ -137,7 +138,7 @@
     z-index: 10;
 }
 
-#restart-button {
+#reset-button {
     background-color: #5eea3a;
     border: 2px solid #5eea3a;
     padding: 5px;
@@ -149,12 +150,12 @@
     font-size: medium;
 }
 
-#restart-button:hover {
+#reset-button:hover {
     background-color: black;
     color: #5eea3a;
 }
 
-#restart-button:active {
+#reset-button:active {
     background-color: #5eea3a;
     color: black;
 }
@@ -206,7 +207,7 @@
     }
 
     #game-stats {
-        width: 70%;
+        width: 95%;
     }
 
     .side-container {

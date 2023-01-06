@@ -11,7 +11,6 @@ class Game {
     name;
     players = [];
     state = {
-        status: null,
         message: null,
         finished: false,
         fields: [
@@ -57,10 +56,7 @@ class Game {
         } else if (fields[2] === value && fields[4] === value && fields[6] === value) {
             winner = true;
         }
-
-        if (winner) {
-            return true;
-        }
+        return winner;
     }
 
     isFull() {
@@ -75,7 +71,14 @@ class Game {
 
     reset() {
         this.state.fields = ['', '', '', '', '', '', '', '', ''];
-        io.to(this.id).emit('reset', '...');
+    }
+
+    getPlayerTurn() {
+        if (this.players[0].turn) {
+            return this.players[0];
+        } else {
+            return this.players[1];
+        }
     }
 }
 
@@ -108,32 +111,46 @@ io.on('connection', (socket) => {
 
     socket.on('reset', (req) => {
         let game = getGame(req.gameId);
+        if (!game) {
+            return;
+        }
         game.reset();
-        io.to(socket.id).emit('reset');
+        io.to(game.id).emit('reset');
+        game.state.message = game.getPlayerTurn().name + ' ist an der Reihe';
+        sendStatusMsg(game.id, {
+            statusMsg: game.getPlayerTurn().name + ' ist an der Reihe',
+            finished: true,
+            won: false
+        })
     });
 
     socket.on('fill', (req) => {
         let game = getGame(req.gameId);
-
-        if (game && game.state.fields[req.field] === '') {
-            let player = getPlayerBySocket(socket.id);
-            let value = player.value;
+        let player = getPlayerBySocket(socket.id);
+        let location;
+        let status;
+        let finished;
+        let won;
+        let winner;
+        let turn;
+        let reset;
+        if (!game || !player) {
+            return;
+        }
+        let value = player.value;
+        if (game.state.fields[req.field] === '' && player.turn) {
+            status = 'SUCCESS';
+            location = game.id;
             game.fill(value, req.field)
-            io.to(game.id).emit('fill', {
-                field: req.field,
-                value: value
-            });
-            let status;
-            let finished;
-            let won;
-            let turn;
             if (game.isWinner(player)) {
-                status = 'Spieler ' + player.name + ' hat das Spiel gewonnen!';
+                game.state.message = player.name + ' hat das Spiel gewonnen';
                 finished = true;
                 won = true
+                winner = 'player-' + (getPlayerIndex(player.name, game.id) + 1);
+                console.log(winner);
             } else {
                 if (game.isFull()) {
-                    game.reset();
+                    reset = true;
                 }
                 if (game.players[0].turn) {
                     game.players[0].turn = !game.players[0].turn;
@@ -144,13 +161,26 @@ io.on('connection', (socket) => {
                     game.players[0].turn = !game.players[0].turn;
                     turn = game.players[0];
                 }
-                status = turn.name + ' ist an der Reihe';
+                game.state.message = turn.name + ' ist an der Reihe';
             }
-            sendStatus(game.id, {
-                status: status,
-                finished: finished,
-                won: won
-            })
+        } else {
+            status = 'FAILED';
+            location = socket.id;
+        }
+        io.to(location).emit('fill', {
+            status: status,
+            field: req.field,
+            value: value
+        });
+        sendStatusMsg(game.id, {
+            statusMsg: game.state.message,
+            finished: finished,
+            won: won,
+            winner: winner
+        })
+        if (reset) {
+            game.reset();
+            io.to(game.id).emit('reset', {won: false});
         }
     });
 
@@ -192,12 +222,17 @@ io.on('connection', (socket) => {
         let playerName = req.playerName;
         let gameId = req.gameId;
         let game = getGame(gameId);
+        if (!game) {
+            return;
+        }
         let status;
-        let status2;
+        let statusMsg;
         let msg;
+        let location = socket.id;
 
-        if (playerName.length <= 20 || !includesForbiddenChars(playerName)) {
+        if (playerName.length <= 20 && !includesForbiddenChars(playerName) && (!game.players[0] || playerName !== game.players[0].name)) {
             if (game.players.length < 2) {
+                location = game.id;
                 let player = new Player();
                 player.name = playerName;
                 player.id = generateId(12);
@@ -211,7 +246,8 @@ io.on('connection', (socket) => {
                     } else if (game.players[0].value === chars[1]) {
                         player.value = chars[0];
                     }
-                    status2 = game.players[0].name + ' ist an der Reihe';
+                    statusMsg = game.players[0].name + ' ist an der Reihe';
+                    game.state.message = statusMsg;
                 }
                 player.points = 0;
                 game.join(player);
@@ -227,8 +263,11 @@ io.on('connection', (socket) => {
         } else if (includesForbiddenChars(playerName)) {
             status = 'FAILED';
             msg = 'Der Spielername enthält verbotene Zeichen';
+        } else if (playerName === game.players[0].name) {
+            status = 'FAILED';
+            msg = 'Dein Gegner hat diesen Namen schon';
         }
-        io.to(gameId).emit('join', {
+        io.to(location).emit('join', {
             status: status,
             msg: msg,
             playerName: playerName,
@@ -236,8 +275,10 @@ io.on('connection', (socket) => {
             gameName: game.name,
             players: game.players
         });
-        sendStatus(game.id, {
-            status: status2,
+        sendStatusMsg(game.id, {
+            statusMsg: statusMsg,
+            finished: false,
+            won: false
         })
      });
 
@@ -245,18 +286,19 @@ io.on('connection', (socket) => {
         userCount--;
         let game = getGameByPlayerSocket(socket.id);
         let player = getPlayerBySocket(socket.id);
-        if (game) {
-            if (game.players.length === 1) {
-                removeGame(game.id);
-                return;
-            }
-            let index = getPlayerIndex(player.name);
-            game.leave(index);
-
-            io.to(game.id).emit('leave', {
-                playerName: player.name
-            });
+        if (!game || !player) {
+            return;
         }
+        if (game.players.length === 1) {
+            removeGame(game.id);
+            return;
+        }
+        let index = getPlayerIndex(player.name, game.id);
+        game.leave(index);
+        game.players[0].turn = true;
+        io.to(game.id).emit('leave', {
+            playerName: player.name
+        });
     });
 
     socket.on('join-status', (req) => {
@@ -285,8 +327,8 @@ io.on('connection', (socket) => {
 
 });
 
-function sendStatus(socket, status) {
-    io.to(socket).emit('status', status);
+function sendStatusMsg(socket, status) {
+    io.to(socket).emit('status-msg', status);
 }
 
 function getGame(id) {
@@ -327,13 +369,15 @@ function getPlayerBySocket(socketId) {
     }
 }
 
-function getPlayerIndex(playerName) {
+function getPlayerIndex(playerName, gameId) {
     for (let i = 0; i < games.length; i++) {
         let game = games[i];
-        if (game.players[0] && game.players[0].name === playerName) {
-            return 0;
-        } else if (game.players[1] && game.players[1].name === playerName) {
-            return 1;
+        if (game.id === gameId) {
+            if (game.players[0] && game.players[0].name === playerName) {
+                return 0;
+            } else if (game.players[1] && game.players[1].name === playerName) {
+                return 1;
+            }
         }
     }
 }
@@ -376,6 +420,9 @@ function includesForbiddenChars(text) {
 
 app.use(express.static('public/files'));
 
+app.get('*', function(req, res) {
+    res.redirect('/404');
+});
 server.listen(port, () => {
     console.log(`TicTacToe-Online listening on port ${port}`);
 });

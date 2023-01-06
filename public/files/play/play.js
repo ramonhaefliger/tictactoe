@@ -81,7 +81,7 @@ socket.on('join-status', function(res) {
         writeContent();
     } else {
         content.innerHTML =
-            `<p id="error-icon">:(</p>
+            `<p id="error-icon">:/</p>
              <a>${res.msg}</a>`;
     }
 });
@@ -98,7 +98,6 @@ socket.on('join', function(res) {
     if (res.status === 'SUCCESS') {
         playerCount = res.players.length;
         let players = res.players;
-
         if (!gameLoaded) {
             initializeGame(res);
             gameLoaded = true;
@@ -106,26 +105,17 @@ socket.on('join', function(res) {
             writeToLogs(`Spieler ${players[playerCount - 1].name} ist dem Spiel beigetreten!`);
             showJoinMessage(players[playerCount - 1].name);
         }
-
         if (playerCount > 1) {
             overlay.style.display = 'none';
+            document.getElementById('players').style.display = 'flex';
         }
-
-        let playerList = document.getElementById('player-list');
-        playerList.innerHTML = '';
-
-        for (let i = 0; i < playerCount; i++) {
-            let playerName = players[i].name;
-            let playerValue = players[i].value;
-            playerList.insertAdjacentHTML('beforeend', `
-                <li name="${playerName}">${playerName} (${playerValue})</li>`
-            );
-            document.getElementById('player-' + (i + 1)).innerHTML = playerName;
-        }
-
+        refreshPlayerStats(players);
     } else {
+        alert(JSON.stringify(res));
         let errorMsg = document.getElementById('join-error-msg');
-        errorMsg.innerHTML = res.msg + '!';
+        if (errorMsg) {
+            errorMsg.innerHTML = res.msg + '!';
+        }
     }
 });
 
@@ -134,6 +124,7 @@ function initializeGame(res) {
     playerName = res.playerName;
     writeGame();
     ping();
+    clear();
     logs.innerHTML = '';
     for (let i = 0; i < res.players.length; i++) {
         let player = res.players[i];
@@ -141,13 +132,30 @@ function initializeGame(res) {
     }
 }
 
+function refreshPlayerStats(players) {
+    let playerList = document.getElementById('player-list');
+    playerList.innerHTML = '';
+    for (let i = 0; i < players.length; i++) {
+        let playerName = players[i].name;
+        let playerValue = players[i].value;
+        playerList.insertAdjacentHTML('beforeend', `
+                <li name="${playerName}">${playerName} (${playerValue})</li>`
+        );
+        document.getElementById('player-' + (i + 1)).innerHTML = playerName;
+    }
+}
+
 socket.on('leave', function(res) {
     playerCount--;
     writeToLogs(`Spieler ${res.playerName} hat das Spiel verlassen.`);
     let playerInList = document.getElementsByName(res.playerName);
+    let resetBtn = document.getElementById('reset-button');
+    let playerStats = document.getElementById('players');
     playerInList[0].remove();
     overlay.style.display = 'flex';
     overlayText.innerHTML = 'Warten auf Spieler...';
+    resetBtn.style.display = 'none';
+    playerStats.style.display = 'none';
     showLeaveMessage(res.playerName);
 });
 
@@ -210,7 +218,7 @@ function writeGame() {
                       <th id="player-1">warten...</th>
                     </tr>
                     <tr>
-                      <td class="points">0</td>
+                      <td class="points" id="player-1-count">0</td>
                     </tr>
                   </table>
                    <table>
@@ -218,7 +226,7 @@ function writeGame() {
                       <th id="player-2">warten...</th>
                     </tr>
                     <tr>
-                      <td class="points">0</td>
+                      <td class="points" id="player-2-count">0</td>
                     </tr>
                   </table>
               </div>
@@ -284,30 +292,49 @@ function showLeaveMessage(name) {
 }
 
 socket.on('fill', function(res) {
-    document.getElementById(res.field).innerHTML = res.value;
+    let field = document.getElementById(res.field);
+    if (res.status === 'SUCCESS') {
+        field.innerHTML = res.value;
+    } else {
+        field.style.background = '#f53a12';
+        delay(300).then(() => field.style.background = 'white');
+    }
 });
 
-socket.on('status', function(res) {
-    document.getElementById('status').innerHTML = res.status.toUpperCase();
+socket.on('status-msg', function(res) {
+    let status = document.getElementById('status')
+    status.innerHTML = res.statusMsg.toUpperCase() + '!';
     if (res.won) {
-        let resetBtn = document.getElementById('restart-button');
+        let resetBtn = document.getElementById('reset-button');
         overlay.style.display = 'flex';
         resetBtn.style.display = 'block';
         overlayText.innerHTML = 'Spiel fertig';
+        increaseScore(res.winner);
     }
 });
 
 socket.on('reset', function(res) {
-    for (let i = 0; i < 9; i++) {
-        document.getElementById(i).innerHTML = '';
-    }
+    let resetBtn = document.getElementById('reset-button');
+    overlay.style.display = 'none';
+    resetBtn.style.display = 'block';
+    clear();
 });
 
 function reset() {
     socket.emit('reset', {
         gameId: gameId
     })
-    let resetBtn = document.getElementById('restart-button');
-    overlay.style.display = 'none';
-    resetBtn.style.display = 'block';
+}
+
+function clear() {
+    for (let i = 0; i < 9; i++) {
+        document.getElementById(i.toString()).innerHTML = '';
+    }
+}
+
+function increaseScore(player) {
+    let element = document.getElementById(player + '-count');
+    let count = element.innerHTML;
+    let a = parseInt(count);
+    element.innerHTML = (a + 1).toString();
 }
