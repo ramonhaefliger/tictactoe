@@ -6,6 +6,9 @@ let type = urlParams.get('type');
 let playerName;
 let playerCount = 0;
 let content = document.getElementById('content-box');
+let overlay;
+let overlayText;
+let logs;
 let gameLoaded = false;
 
 function hashChange() {
@@ -15,12 +18,11 @@ window.onhashchange = hashChange;
 
 if (gameId === 'test') {
     writeGame();
-} else if(type !== 'create') {
-    checkGame();
 } else if (type === 'create') {
     writeContent();
+} else if(type !== 'create') {
+    checkGame();
 }
-
 function writeContent() {
     if(type === 'create') {
         content.innerHTML =
@@ -106,8 +108,7 @@ socket.on('join', function(res) {
         }
 
         if (playerCount > 1) {
-            let overlayText = document.getElementById('overlay');
-            overlayText.style.display = 'none';
+            overlay.style.display = 'none';
         }
 
         let playerList = document.getElementById('player-list');
@@ -133,7 +134,6 @@ function initializeGame(res) {
     playerName = res.playerName;
     writeGame();
     ping();
-    let logs = document.getElementById('logs');
     logs.innerHTML = '';
     for (let i = 0; i < res.players.length; i++) {
         let player = res.players[i];
@@ -144,16 +144,14 @@ function initializeGame(res) {
 socket.on('leave', function(res) {
     playerCount--;
     writeToLogs(`Spieler ${res.playerName} hat das Spiel verlassen.`);
-    let overlayText = document.getElementById('overlay');
     let playerInList = document.getElementsByName(res.playerName);
     playerInList[0].remove();
-    overlayText.style.display = 'flex';
+    overlay.style.display = 'flex';
     overlayText.innerHTML = 'Warten auf Spieler...';
     showLeaveMessage(res.playerName);
 });
 
 function writeToLogs(text) {
-    let logs = document.getElementById('logs');
     logs.insertAdjacentHTML('beforeend', `<a>${text}</a>`);
     logs.scrollTop = logs.scrollHeight;
 }
@@ -177,8 +175,8 @@ function writeGame() {
           </div>
           <div id="game">
           <div id="overlay">
-            <a>Warten auf Spieler...</a>
-            <button id="restart-button" onclick="restart()">
+            <a id="overlay-text">Warten auf Spieler...</a>
+            <button id="reset-button" onclick="reset()" style="display: none">
                 <a style="display: flex; align-items: center;">
                   <i class="material-icons" style="font-size:20px">refresh</i>
                   &nbsp;Nochmal spielen
@@ -236,6 +234,9 @@ function writeGame() {
         </div>`;
     document.getElementById('game-pin').innerHTML = gameId;
     document.getElementById('room-title').innerHTML = gameName + " - #" + gameId;
+    overlay = document.getElementById('overlay');
+    overlayText = document.getElementById('overlay-text');
+    logs = document.getElementById('logs');
 }
 
 
@@ -250,8 +251,6 @@ function ping() {
         });
     }, 1000);
 }
-
-// GAME
 
 function fillField(id) {
     let field = document.getElementById(id);
@@ -291,8 +290,10 @@ socket.on('fill', function(res) {
 socket.on('status', function(res) {
     document.getElementById('status').innerHTML = res.status.toUpperCase();
     if (res.won) {
-        document.getElementById('overlay').style.display = 'flex';
-        document.getElementById('overlay').innerHTML = 'Spiel fertig';
+        let resetBtn = document.getElementById('restart-button');
+        overlay.style.display = 'flex';
+        resetBtn.style.display = 'block';
+        overlayText.innerHTML = 'Spiel fertig';
     }
 });
 
@@ -301,3 +302,12 @@ socket.on('reset', function(res) {
         document.getElementById(i).innerHTML = '';
     }
 });
+
+function reset() {
+    socket.emit('reset', {
+        gameId: gameId
+    })
+    let resetBtn = document.getElementById('restart-button');
+    overlay.style.display = 'none';
+    resetBtn.style.display = 'block';
+}

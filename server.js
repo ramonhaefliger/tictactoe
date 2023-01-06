@@ -82,6 +82,7 @@ class Game {
 class Player {
     id;
     name;
+    turn;
     value;
     socketId;
     points;
@@ -89,7 +90,6 @@ class Player {
 
 let games = [];
 let chars = ['x', 'o'];
-// let winCombinations = [[0, 1, 2], [0, 3, 6], [0, 4, 8], [1, 4, 7], [2, 5, 8], [4, 5, 6], [7, 8, 9], [2, 4, 6], [6, 7, 8]];
 let userCount = 0;
 
 io.on('connection', (socket) => {
@@ -106,15 +106,18 @@ io.on('connection', (socket) => {
         });
     });
 
+    socket.on('reset', (req) => {
+        let game = getGame(req.gameId);
+        game.reset();
+        io.to(socket.id).emit('reset');
+    });
+
     socket.on('fill', (req) => {
         let game = getGame(req.gameId);
 
         if (game && game.state.fields[req.field] === '') {
             let player = getPlayerBySocket(socket.id);
-            let value;
-            if (player) {
-                value = player.value;
-            }
+            let value = player.value;
             game.fill(value, req.field)
             io.to(game.id).emit('fill', {
                 field: req.field,
@@ -123,15 +126,25 @@ io.on('connection', (socket) => {
             let status;
             let finished;
             let won;
+            let turn;
             if (game.isWinner(player)) {
                 status = 'Spieler ' + player.name + ' hat das Spiel gewonnen!';
                 finished = true;
                 won = true
-            } else if (game.isFull() && !game.isWinner(player)) {
-                game.reset();
-                status = 'Niemand hat das Spiel gewonnen...';
-                finished = true;
-                won = false;
+            } else {
+                if (game.isFull()) {
+                    game.reset();
+                }
+                if (game.players[0].turn) {
+                    game.players[0].turn = !game.players[0].turn;
+                    game.players[1].turn = !game.players[1].turn;
+                    turn = game.players[1];
+                } else {
+                    game.players[1].turn = !game.players[1].turn;
+                    game.players[0].turn = !game.players[0].turn;
+                    turn = game.players[0];
+                }
+                status = turn.name + ' ist an der Reihe';
             }
             sendStatus(game.id, {
                 status: status,
@@ -180,6 +193,7 @@ io.on('connection', (socket) => {
         let gameId = req.gameId;
         let game = getGame(gameId);
         let status;
+        let status2;
         let msg;
 
         if (playerName.length <= 20 || !includesForbiddenChars(playerName)) {
@@ -190,12 +204,14 @@ io.on('connection', (socket) => {
                 player.socketId = socket.id;
                 if (game.players.length === 0) {
                     player.value = chars[0];
+                    player.turn = true;
                 } else {
                     if (game.players[0].value === chars[0]) {
                         player.value = chars[1];
                     } else if (game.players[0].value === chars[1]) {
                         player.value = chars[0];
                     }
+                    status2 = game.players[0].name + ' ist an der Reihe';
                 }
                 player.points = 0;
                 game.join(player);
@@ -220,6 +236,9 @@ io.on('connection', (socket) => {
             gameName: game.name,
             players: game.players
         });
+        sendStatus(game.id, {
+            status: status2,
+        })
      });
 
     socket.on('disconnect', () => {
