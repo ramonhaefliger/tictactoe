@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe Online</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="content-box-aligner">
+  <div id="content-box">
+    <h1>Tic-Tac-Toe Online</h1>
+    <div id="button-aligner">
+      <div id="buttons">
+        <h3>Spiel mit PIN beitreten</h3>
+        <input id="join-gameid" placeholder="Spiele-PIN eingeben">
+        <button onclick="redirectToJoin()">SPIEL BEITRETEN</button>
+      </div>
+    </div>
+    <h3>Spiel aus der Liste beitreten</h3>
+      <div id="table-wrapper">
+          <div id="table">
+              <table id="game-list">
+                  <tr>
+                      <th>PIN</th>
+                      <th>Name</th>
+                      <th>Spieler</th>
+                  </tr>
+              </table>
+          </div>
+      </div>
+    <div id="reload-wrapper">
+        <button onclick="getGames()">Aktualisieren</button>
+    </div>
+  </div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="join.js"></script>
+</body>
+</html>

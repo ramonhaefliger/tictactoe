@@ -61,12 +61,16 @@ button {
     font-size: large;
 }
 
-button:hover {
+button[disabled=disabled], button:disabled {
+    opacity: 0.5;
+}
+
+button:not([disabled]):hover {
     background-color: black;
     color: #ff613d;
 }
 
-button:active {
+button:not([disabled]):active {
     background-color: #ff613d;
     color: black;
 }

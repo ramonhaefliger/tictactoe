@@ -80,6 +80,24 @@ class Game {
             return this.players[1];
         }
     }
+
+    switchPlayerTurn() {
+        let turn;
+        if (this.players[0].turn) {
+            this.players[0].turn = !this.players[0].turn;
+            this.players[1].turn = !this.players[1].turn;
+            turn = this.players[1];
+        } else {
+            this.players[1].turn = !this.players[1].turn;
+            this.players[0].turn = !this.players[0].turn;
+            turn = this.players[0];
+        }
+        this.setStatusMsg(turn.name + ' ist an der Reihe');
+    }
+
+    setStatusMsg(msg) {
+        this.state.message = msg;
+    }
 }
 
 class Player {
@@ -109,6 +127,10 @@ io.on('connection', (socket) => {
         });
     });
 
+    socket.on('game-list', () => {
+        io.to(socket.id).emit('game-list', games);
+    })
+
     socket.on('reset', (req) => {
         let game = getGame(req.gameId);
         if (!game) {
@@ -116,7 +138,7 @@ io.on('connection', (socket) => {
         }
         game.reset();
         io.to(game.id).emit('reset');
-        game.state.message = game.getPlayerTurn().name + ' ist an der Reihe';
+        game.setStatusMsg(game.getPlayerTurn().name + ' ist an der Reihe');
         sendStatusMsg(game.id, {
             statusMsg: game.getPlayerTurn().name + ' ist an der Reihe',
             finished: true,
@@ -132,7 +154,6 @@ io.on('connection', (socket) => {
         let finished;
         let won;
         let winner;
-        let turn;
         let reset;
         if (!game || !player) {
             return;
@@ -143,25 +164,15 @@ io.on('connection', (socket) => {
             location = game.id;
             game.fill(value, req.field)
             if (game.isWinner(player)) {
-                game.state.message = player.name + ' hat das Spiel gewonnen';
+                game.setStatusMsg(player.name + ' hat das Spiel gewonnen');
                 finished = true;
                 won = true
                 winner = 'player-' + (getPlayerIndex(player.name, game.id) + 1);
-                console.log(winner);
             } else {
                 if (game.isFull()) {
                     reset = true;
                 }
-                if (game.players[0].turn) {
-                    game.players[0].turn = !game.players[0].turn;
-                    game.players[1].turn = !game.players[1].turn;
-                    turn = game.players[1];
-                } else {
-                    game.players[1].turn = !game.players[1].turn;
-                    game.players[0].turn = !game.players[0].turn;
-                    turn = game.players[0];
-                }
-                game.state.message = turn.name + ' ist an der Reihe';
+                game.switchPlayerTurn();
             }
         } else {
             status = 'FAILED';
@@ -199,7 +210,6 @@ io.on('connection', (socket) => {
             socket.join(gameId);
             status = 'SUCCESS';
             msg = 'Raum erfolgreich erstellt'
-            console.log("Room " + gameName + " (" + gameId + ") added");
         } else if (gameName.length > 20) {
             status = 'FAILED';
             msg = 'Der Raumname ist zu lang (max. 20 Zeichen)';
@@ -230,36 +240,32 @@ io.on('connection', (socket) => {
         let msg;
         let location = socket.id;
 
-        if (playerName.length <= 20 && !includesForbiddenChars(playerName) && (!game.players[0] || playerName !== game.players[0].name)) {
-            if (game.players.length < 2) {
-                location = game.id;
-                let player = new Player();
-                player.name = playerName;
-                player.id = generateId(12);
-                player.socketId = socket.id;
-                if (game.players.length === 0) {
+        if (game.players.length < 2 && playerName.length <= 20 && !includesForbiddenChars(playerName) && (!game.players[0] || playerName !== game.players[0].name)) {
+            location = game.id;
+            let player = new Player();
+            player.name = playerName;
+            player.id = generateId(12);
+            player.socketId = socket.id;
+            if (game.players.length === 0) {
+                player.value = chars[0];
+                player.turn = true;
+            } else {
+                if (game.players[0].value === chars[0]) {
+                    player.value = chars[1];
+                } else if (game.players[0].value === chars[1]) {
                     player.value = chars[0];
-                    player.turn = true;
-                } else {
-                    if (game.players[0].value === chars[0]) {
-                        player.value = chars[1];
-                    } else if (game.players[0].value === chars[1]) {
-                        player.value = chars[0];
-                    }
-                    statusMsg = game.players[0].name + ' ist an der Reihe';
-                    game.state.message = statusMsg;
                 }
-                player.points = 0;
-                game.join(player);
-
-                socket.join(gameId);
-                status = 'SUCCESS';
-                msg = null;
+                statusMsg = game.players[0].name + ' ist an der Reihe';
+                game.setStatusMsg(statusMsg);
             }
+            player.points = 0;
+            game.join(player);
+            socket.join(gameId);
+            status = 'SUCCESS';
+            msg = null;
         } else if (playerName.length > 20) {
             status = 'FAILED';
             msg = 'Der Spielername ist zu lang (max. 20 Zeichen)';
-
         } else if (includesForbiddenChars(playerName)) {
             status = 'FAILED';
             msg = 'Der Spielername enthält verbotene Zeichen';

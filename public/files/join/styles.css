@@ -1,0 +1,32 @@
+.game {
+    background-color: #464646;
+}
+
+th {
+    height: 40px;
+}
+
+td {
+    width: 100px;
+}
+
+td {
+    border: 0;
+}
+
+table {
+    border-spacing: 0;
+    background-color: #2a2a2a;
+}
+
+#table-wrapper {
+    display: flex;
+    justify-content: center;
+    height: auto;
+    max-height: 300px;
+    margin: 20px;
+}
+
+#table {
+    overflow: auto;
+}

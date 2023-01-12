@@ -111,7 +111,6 @@ socket.on('join', function(res) {
         }
         refreshPlayerStats(players);
     } else {
-        alert(JSON.stringify(res));
         let errorMsg = document.getElementById('join-error-msg');
         if (errorMsg) {
             errorMsg.innerHTML = res.msg + '!';
@@ -147,7 +146,6 @@ function refreshPlayerStats(players) {
 
 socket.on('leave', function(res) {
     playerCount--;
-    writeToLogs(`Spieler ${res.playerName} hat das Spiel verlassen.`);
     let playerInList = document.getElementsByName(res.playerName);
     let resetBtn = document.getElementById('reset-button');
     let playerStats = document.getElementById('players');
@@ -156,7 +154,9 @@ socket.on('leave', function(res) {
     overlayText.innerHTML = 'Warten auf Spieler...';
     resetBtn.style.display = 'none';
     playerStats.style.display = 'none';
+    writeToLogs(`Spieler ${res.playerName} hat das Spiel verlassen.`);
     showLeaveMessage(res.playerName);
+    resetScores();
 });
 
 function writeToLogs(text) {
@@ -235,7 +235,7 @@ function writeGame() {
         <div id="leave-button-container">
             <button id="leave-button" onclick="leaveGame()">
                 <a style="display: flex; align-items: center;">
-                  <i class="material-icons" style="font-size:20px">arrow_back</i>
+                  <i class="material-icons" style="font-size: 20px">arrow_back</i>
                   Spiel verlassen
                 </a>
             </button>
@@ -313,7 +313,7 @@ socket.on('status-msg', function(res) {
     }
 });
 
-socket.on('reset', function(res) {
+socket.on('reset', function() {
     let resetBtn = document.getElementById('reset-button');
     overlay.style.display = 'none';
     resetBtn.style.display = 'block';
@@ -337,4 +337,11 @@ function increaseScore(player) {
     let count = element.innerHTML;
     let a = parseInt(count);
     element.innerHTML = (a + 1).toString();
+}
+
+function resetScores() {
+    let p1 = document.getElementById('player-1-count');
+    let p2 = document.getElementById('player-2-count');
+    p1.innerHTML = 0;
+    p2.innerHTML = 0;
 }
