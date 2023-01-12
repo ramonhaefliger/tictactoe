@@ -111,10 +111,8 @@ class Player {
 
 let games = [];
 let chars = ['x', 'o'];
-let userCount = 0;
 
 io.on('connection', (socket) => {
-    userCount++;
 
     socket.on('ping', (callback) => {
         callback();
@@ -123,7 +121,7 @@ io.on('connection', (socket) => {
     socket.on('info', () => {
         io.to(socket.id).emit('info', {
             gameCount: games.length,
-            userCount: userCount
+            userCount: io.engine.clientsCount
         });
     });
 
@@ -289,7 +287,6 @@ io.on('connection', (socket) => {
      });
 
     socket.on('disconnect', () => {
-        userCount--;
         let game = getGameByPlayerSocket(socket.id);
         let player = getPlayerBySocket(socket.id);
         if (!game || !player) {
@@ -424,11 +421,23 @@ function includesForbiddenChars(text) {
     return false;
 }
 
+function clearGames() {
+    for (let i = 0; i < games.length; i++) {
+        let game = games[i];
+        if (game.players.length < 1) {
+            removeGame(game.id);
+        }
+    }
+}
+
+setInterval(clearGames, 1000 * 60);
+
 app.use(express.static('public/files'));
 
 app.get('*', function(req, res) {
     res.redirect('/404');
 });
-server.listen(port, () => {
+
+server.listen(port,() => {
     console.log(`TicTacToe-Online listening on port ${port}`);
 });

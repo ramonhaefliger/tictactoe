@@ -16,24 +16,28 @@ socket.on('game-list', function(gameList) {
 
 function writeGames(gameList) {
     let list = document.getElementById('game-list');
-    list.innerHTML =
-        `<tr>
+    if (gameList.length === 0) {
+        list.innerHTML = 'Momentan sind keine Spiele offen.';
+    } else {
+        list.innerHTML =
+            `<tr>
            <th>PIN</th>
            <th>Name</th>
            <th>Spieler</th>
         </tr>`;
+    }
     for (let i = 0; i < gameList.length; i++) {
-        let plus = '';
+        let full = '';
         if (gameList[i].players.length >= 2) {
-            plus = 'disabled';
+            full = 'disabled';
         }
         list.insertAdjacentHTML('beforeend',
             `<tr>
                       <td>#${gameList[i].id}</td>
-                      <td>${gameList[i].name}</td>
+                      <td class="name">${gameList[i].name}</td>
                       <td>${gameList[i].players.length}/2</td>
-                      <td><button id="list-join-button" onclick="location.replace('/play/#${gameList[i].id}')" ${plus}>BEITRETEN</button></td>
-                  </tr>`
+                      <td><button id="list-join-button" onclick="location.replace('/play/#${gameList[i].id}')" ${full}>BEITR.</button></td>
+                 </tr>`
         );
     }
 }
